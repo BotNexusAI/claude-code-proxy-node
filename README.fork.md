@@ -36,8 +36,8 @@ The proxy handles both streaming and non-streaming responses, maintaining compat
 
 1.  **Clone the Repository**:
     ```bash
-    git clone <your-fork-repo-url>
-    cd <your-repo-directory>
+    git clone https://github.com/1rgs/claude-code-openai.git
+    cd claude-code-openai
     ```
 
 2.  **Run the Initialization Wizard**:
@@ -94,6 +94,20 @@ export PREFERRED_PROVIDER="google"
 export BIG_MODEL="gemini-2.5-pro-preview-06-25"
 export SMALL_MODEL="gemini-2.0-flash"
 ```
+
+## Model Mapping 🗺️
+
+The proxy automatically maps standard Claude model names (`haiku`, `sonnet`) to the models you configure with the `BIG_MODEL` and `SMALL_MODEL` environment variables. It also adds the correct provider prefix (`openai/` or `gemini/`) based on your `PREFERRED_PROVIDER` setting.
+
+### Supported Models
+
+The proxy has a built-in list of known models for convenience. If you use one of these names for `BIG_MODEL` or `SMALL_MODEL`, the provider prefix will be added automatically.
+
+#### OpenAI Models
+- `o3-mini`, `o1`, `o1-mini`, `o1-pro`, `gpt-4.5-preview`, `gpt-4o`, `gpt-4o-audio-preview`, `chatgpt-4o-latest`, `gpt-4o-mini`, `gpt-4o-mini-audio-preview`, `gpt-4.1`, `gpt-4.1-mini`
+
+#### Gemini Models
+- `gemini-2.5-pro-preview-03-25`, `gemini-2.0-flash`
 
 ## Running Tests 🧪
 
