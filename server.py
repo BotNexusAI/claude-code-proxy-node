@@ -82,6 +82,14 @@ ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
+# Validate that API keys are set
+if not OPENAI_API_KEY:
+    logger.error("FATAL: OPENAI_API_KEY environment variable not set.")
+    sys.exit(1)
+if not GEMINI_API_KEY:
+    logger.error("FATAL: GEMINI_API_KEY environment variable not set.")
+    sys.exit(1)
+
 # Get preferred provider (default to openai)
 PREFERRED_PROVIDER = os.environ.get("PREFERRED_PROVIDER", "openai").lower()
 

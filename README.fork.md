@@ -1,10 +1,18 @@
-# Anthropic API Proxy for Gemini & OpenAI Models 🔄
+# Anthropic API Proxy for Gemini & OpenAI Models (Fork) 🔄
 
 **Use Anthropic clients (like Claude Code) with Gemini or OpenAI backends.** 🤝
 
-A proxy server that lets you use Anthropic clients with Gemini or OpenAI models via LiteLLM. 🌉
+This is a forked version of the original Anthropic API Proxy, with enhanced features for more flexible and powerful use. This proxy server lets you use Anthropic clients with Gemini or OpenAI models via LiteLLM. 🌉
 
 ![Anthropic API Proxy](pic.png)
+
+## Key Features in This Fork ✨
+
+*   **Advanced Model Mapping**: Automatically map Claude model names like `sonnet` and `haiku` to your preferred models from OpenAI (e.g., `gpt-4.1`) or Google (e.g., `gemini-2.5-pro-preview-06-25`).
+*   **Enhanced Tool Support**: Full support for tool usage, with automatic schema cleaning for compatibility with Gemini models.
+*   **Token Counting Endpoint**: A new `/v1/messages/count_tokens` endpoint to accurately count tokens for a given request.
+*   **Interactive CLI**: A powerful command-line interface to initialize your configuration, start the server, and view your current setup.
+*   **Robust Testing**: Includes a test suite to verify functionality.
 
 ## How It Works 🧩
 
@@ -28,8 +36,8 @@ The proxy handles both streaming and non-streaming responses, maintaining compat
 
 1.  **Clone the Repository**:
     ```bash
-    git clone https://github.com/1rgs/claude-code-openai.git
-    cd claude-code-openai
+    git clone <your-fork-repo-url>
+    cd <your-repo-directory>
     ```
 
 2.  **Run the Initialization Wizard**:
@@ -50,7 +58,6 @@ The proxy handles both streaming and non-streaming responses, maintaining compat
     python3 cli.py start
     ```
     The server will be running at `http://localhost:8082`.
->>>>>>> REPLACE
 
 ### Using with Claude Code 🎮
 
@@ -70,7 +77,7 @@ The proxy handles both streaming and non-streaming responses, maintaining compat
 
 ## Configuration ⚙️
 
-You can customize the proxy's behavior using environment variables.
+You can customize the proxy's behavior using environment variables, managed via the `cli.py init` command or by editing the `.env` file directly. Use `python3 cli.py config` to view your current setup.
 
 | Variable | Description | Default |
 | :--- | :--- | :--- |
@@ -88,19 +95,13 @@ export BIG_MODEL="gemini-2.5-pro-preview-06-25"
 export SMALL_MODEL="gemini-2.0-flash"
 ```
 
-## Model Mapping 🗺️
+## Running Tests 🧪
 
-The proxy automatically maps standard Claude model names (`haiku`, `sonnet`) to the models you configure with the `BIG_MODEL` and `SMALL_MODEL` environment variables. It also adds the correct provider prefix (`openai/` or `gemini/`) based on your `PREFERRED_PROVIDER` setting.
+This project includes a test suite to ensure everything is working as expected. To run the tests, first make sure you have set up your `.env` file using `python3 cli.py init`. Then, run the following command:
 
-### Supported Models
-
-The proxy has a built-in list of known models for convenience. If you use one of these names for `BIG_MODEL` or `SMALL_MODEL`, the provider prefix will be added automatically.
-
-#### OpenAI Models
-- `o3-mini`, `o1`, `o1-mini`, `o1-pro`, `gpt-4.5-preview`, `gpt-4o`, `gpt-4o-audio-preview`, `chatgpt-4o-latest`, `gpt-4o-mini`, `gpt-4o-mini-audio-preview`, `gpt-4.1`, `gpt-4.1-mini`
-
-#### Gemini Models
-- `gemini-2.5-pro-preview-03-25`, `gemini-2.0-flash`
+```bash
+python3 -m pytest
+```
 
 ## Contributing 🤝
 
