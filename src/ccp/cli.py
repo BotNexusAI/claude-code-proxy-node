@@ -5,9 +5,15 @@ import os
 import subprocess
 import sys
 from dotenv import set_key, get_key, find_dotenv
+from typing_extensions import Annotated
+from pathlib import Path
+import signal
 
 app = typer.Typer()
 console = Console()
+
+# --- Constants ---
+PID_FILE = Path(os.getcwd()) / ".ccp.pid"
 
 # --- Helper Functions ---
 def print_info(message):
@@ -112,48 +118,165 @@ def init():
                 print_error(f"Failed to write to {rc_file}: {e}")
 
 @app.command()
-def start():
+def start(
+    foreground: Annotated[
+        bool,
+        typer.Option(
+            "-f",
+            "--foreground",
+            help="Run the server in the foreground.",
+        ),
+    ] = False,
+    auto: Annotated[
+        bool,
+        typer.Option(
+            "--auto",
+            help="Automatically launch the Claude Code client after starting the server.",
+        ),
+    ] = False,
+):
     """
     Starts the proxy server.
     """
     console.rule("[bold]Starting Server[/bold]")
 
-    # --- Environment Setup ---
-    venv_dir = ".venv"
-    if not os.path.isdir(venv_dir):
-        print_warning("Virtual environment not found.")
-        if Confirm.ask("Create one now?"):
+    if foreground and auto:
+        print_error("The --foreground and --auto flags cannot be used together.")
+        sys.exit(1)
+
+    server_is_running = PID_FILE.exists()
+
+    if server_is_running and not auto:
+        print_error(f"Server is already running. PID file found at: {PID_FILE}")
+        print_info("If the server is not running, delete the PID file and try again.")
+        sys.exit(1)
+
+    if not server_is_running:
+        # --- Environment and Dependency Setup ---
+        venv_dir = ".venv"
+        if not os.path.isdir(venv_dir):
+            print_warning("Virtual environment not found. Creating one...")
             try:
                 subprocess.run(["python3", "-m", "venv", venv_dir], check=True)
                 print_success(f"Virtual environment created at '{venv_dir}'.")
             except subprocess.CalledProcessError as e:
                 print_error(f"Failed to create virtual environment: {e}")
                 sys.exit(1)
-        else:
-            print_error("Cannot start without a virtual environment. Exiting.")
+
+        print_info("Installing/updating dependencies...")
+        try:
+            pip_executable = os.path.join(venv_dir, "bin", "pip")
+            subprocess.run(
+                [pip_executable, "install", "-e", "."],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            print_success("Dependencies are up to date.")
+        except subprocess.CalledProcessError as e:
+            print_error(f"Failed to install dependencies: {e.stderr}")
             sys.exit(1)
 
-    # --- Install Dependencies ---
-    print_info("Installing/updating dependencies...")
-    try:
-        pip_executable = os.path.join(venv_dir, "bin", "pip")
-        subprocess.run([pip_executable, "install", "-r", "requirements.txt"], check=True, capture_output=True, text=True)
-        print_success("Dependencies are up to date.")
-    except subprocess.CalledProcessError as e:
-        print_error(f"Failed to install dependencies: {e.stderr}")
+        # --- Run Server ---
+        uvicorn_executable = os.path.join(venv_dir, "bin", "uvicorn")
+        command = [
+            uvicorn_executable,
+            "src.ccp.server:app",
+            "--host",
+            "0.0.0.0",
+            "--port",
+            "8082",
+        ]
+
+        if foreground:
+            print_info("Starting server in foreground...")
+            print_info("Run the following command in a new terminal to connect your client:")
+            console.print("\n    [bold cyan]ANTHROPIC_BASE_URL=http://localhost:8082 claude[/bold cyan]\n")
+            try:
+                subprocess.run(command + ["--reload", "--reload-dir", "src"])
+            except KeyboardInterrupt:
+                print_info("\nServer stopped by user.")
+            except Exception as e:
+                print_error(f"Failed to start server: {e}")
+                sys.exit(1)
+            return
+
+        # Start server in background for --auto or default mode
+        print_info("Starting server in background...")
+        try:
+            process = subprocess.Popen(
+                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            with open(PID_FILE, "w") as f:
+                f.write(str(process.pid))
+            print_success(f"Server started in background with PID: {process.pid}")
+            print_info(f"PID file created at: {PID_FILE}")
+            print_info("Use 'ccp stop' to stop the server.")
+        except Exception as e:
+            print_error(f"Failed to start server in background: {e}")
+            sys.exit(1)
+
+    if auto:
+        if server_is_running:
+            print_info("Server is already running. Launching Claude Code client...")
+        else:
+            print_info("Server started. Launching Claude Code client...")
+        
+        import time
+        import shutil
+        time.sleep(2) # Give server a moment to start
+
+        if not shutil.which("claude"):
+            print_error("The 'claude' command was not found in your PATH.")
+            print_info("Please ensure you have run 'npm install -g @anthropic-ai/claude-code'.")
+            print_info("The server is still running. Use 'ccp stop' to stop it.")
+            sys.exit(1)
+
+        try:
+            claude_env = os.environ.copy()
+            claude_env["ANTHROPIC_BASE_URL"] = "http://localhost:8082"
+            subprocess.run(["claude"], env=claude_env, check=True)
+        except KeyboardInterrupt:
+            print_info("\nClaude Code client stopped by user.")
+        except subprocess.CalledProcessError as e:
+            print_error(f"Claude Code client exited with an error: {e}")
+        except Exception as e:
+            print_error(f"Failed to launch Claude Code client: {e}")
+        finally:
+            print_info("The proxy server is still running in the background.")
+            print_info("Run 'ccp stop' to shut it down.")
+
+
+@app.command()
+def stop():
+    """
+    Stops the background proxy server.
+    """
+    console.rule("[bold]Stopping Server[/bold]")
+    if not PID_FILE.exists():
+        print_warning("PID file not found. Is the server running?")
         sys.exit(1)
 
-    # --- Run Server ---
-    print_info("Starting server with uvicorn...")
     try:
-        uvicorn_executable = os.path.join(venv_dir, "bin", "uvicorn")
-        subprocess.run([uvicorn_executable, "src.ccp.server:app", "--host", "0.0.0.0", "--port", "8082", "--reload", "--reload-dir", "src"])
-    except FileNotFoundError:
-        print_error("uvicorn not found. Make sure dependencies are installed correctly.")
+        with open(PID_FILE, "r") as f:
+            pid = int(f.read().strip())
+    except (ValueError, FileNotFoundError):
+        print_error("Could not read PID from file. It might be corrupted.")
+        PID_FILE.unlink() # Clean up corrupted file
         sys.exit(1)
+
+    try:
+        os.kill(pid, signal.SIGTERM)
+        print_info(f"Sent stop signal to process with PID: {pid}")
+    except ProcessLookupError:
+        print_warning(f"Process with PID {pid} not found. It may have already stopped.")
     except Exception as e:
-        print_error(f"Failed to start server: {e}")
+        print_error(f"Failed to stop server: {e}")
         sys.exit(1)
+    finally:
+        # Clean up the PID file
+        PID_FILE.unlink()
+        print_success("Server stopped and PID file removed.")
 
 @app.command()
 def config():

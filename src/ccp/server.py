@@ -1326,10 +1326,20 @@ async def create_message(
         if hasattr(e, '__dict__'):
             for key, value in e.__dict__.items():
                 if key not in error_details and key not in ['args', '__traceback__']:
-                    error_details[key] = str(value)
+                    # Make sure we don't try to serialize complex objects
+                    if isinstance(value, (str, int, float, bool, dict, list, type(None))):
+                        error_details[key] = value
+                    else:
+                        error_details[key] = str(value)
         
         # Log all error details
-        logger.error(f"Error processing request: {json.dumps(error_details, indent=2)}")
+        try:
+            log_message = f"Error processing request: {json.dumps(error_details, indent=2)}"
+        except TypeError:
+            # Fallback if JSON serialization fails for any reason
+            log_message = f"Error processing request with non-serializable details: {error_details}"
+            
+        logger.error(log_message)
         
         # Format error for response
         error_message = f"Error: {str(e)}"
