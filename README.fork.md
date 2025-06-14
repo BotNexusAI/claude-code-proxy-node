@@ -8,7 +8,7 @@ This is a forked version of the original Anthropic API Proxy, with enhanced feat
 
 ## Key Features in This Fork ✨
 
-*   **Advanced Model Mapping**: Automatically map Claude model names like `sonnet` and `haiku` to your preferred models from OpenAI (e.g., `gpt-4.1`) or Google (e.g., `gemini-2.5-pro-preview-06-25`).
+*   **Advanced Model Mapping**: Automatically map Claude model names like `sonnet` and `haiku` to your preferred models from OpenAI (e.g., `gpt-4.1`) or Google (e.g., `gemini-2.5-pro-preview-03-25`).
 *   **Enhanced Tool Support**: Full support for tool usage, with automatic schema cleaning for compatibility with Gemini models.
 *   **Token Counting Endpoint**: A new `/v1/messages/count_tokens` endpoint to accurately count tokens for a given request.
 *   **Interactive CLI**: A powerful command-line interface to initialize your configuration, start the server, and view your current setup.
@@ -48,14 +48,14 @@ The proxy handles both streaming and non-streaming responses, maintaining compat
     - Offer to configure your shell (`.zshrc` or `.bashrc`) to make the proxy available automatically.
 
     ```bash
-    python3 cli.py init
+    python3 src/ccp/cli.py init
     ```
 
 3.  **Start the Server**:
     Once initialization is complete, start the proxy server with a single command. This will handle creating a virtual environment, installing dependencies, and launching the server.
 
     ```bash
-    python3 cli.py start
+    python3 src/ccp/cli.py start
     ```
     The server will be running at `http://localhost:8082`.
 
@@ -77,7 +77,7 @@ The proxy handles both streaming and non-streaming responses, maintaining compat
 
 ## Configuration ⚙️
 
-You can customize the proxy's behavior using environment variables, managed via the `cli.py init` command or by editing the `.env` file directly. Use `python3 cli.py config` to view your current setup.
+You can customize the proxy's behavior using environment variables, managed via the `src/ccp/cli.py init` command or by editing the `.env` file directly. Use `python3 src/ccp/cli.py config` to view your current setup.
 
 | Variable | Description | Default |
 | :--- | :--- | :--- |
@@ -91,7 +91,7 @@ You can customize the proxy's behavior using environment variables, managed via 
 **Example: Prefer Google Models**
 ```bash
 export PREFERRED_PROVIDER="google"
-export BIG_MODEL="gemini-2.5-pro-preview-06-25"
+export BIG_MODEL="gemini-2.5-pro-preview-03-25"
 export SMALL_MODEL="gemini-2.0-flash"
 ```
 
@@ -111,7 +111,7 @@ The proxy has a built-in list of known models for convenience. If you use one of
 
 ## Running Tests 🧪
 
-This project includes a test suite to ensure everything is working as expected. To run the tests, first make sure you have set up your `.env` file using `python3 cli.py init`. Then, run the following command:
+This project includes a test suite to ensure everything is working as expected. To run the tests, first make sure you have set up your `.env` file using `python3 src/ccp/cli.py init`. Then, run the following command:
 
 ```bash
 python3 -m pytest

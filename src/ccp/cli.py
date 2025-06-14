@@ -147,7 +147,7 @@ def start():
     print_info("Starting server with uvicorn...")
     try:
         uvicorn_executable = os.path.join(venv_dir, "bin", "uvicorn")
-        subprocess.run([uvicorn_executable, "server:app", "--host", "0.0.0.0", "--port", "8082", "--reload"])
+        subprocess.run([uvicorn_executable, "src.ccp.server:app", "--host", "0.0.0.0", "--port", "8082", "--reload", "--reload-dir", "src"])
     except FileNotFoundError:
         print_error("uvicorn not found. Make sure dependencies are installed correctly.")
         sys.exit(1)
